@@ -21,6 +21,16 @@ export default class GoogleSpreadsheet {
         this.sheets = google.sheets({ version: "v4", auth: this.auth });
     }
 
+    async getSheetMetadata() {
+        try {
+            return await this.sheets.spreadsheets.get({
+                spreadsheetId: this.config.spreadsheetId,
+            });
+        } catch(err) {
+            console.log(err);
+        }
+    }
+
     async getSheetData(range: string) {
         try {
             const result = await this.sheets.spreadsheets.values.get({

@@ -10,27 +10,29 @@ import Configuration from 'src/config';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const local_config = Configuration();
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { encrypt, decrypt } from '../utilities/crypto.utility';
 import { DiscordService } from 'src/discord/discord.service';
 import { OsuService } from 'src/osu/osu.service';
+import { DatabaseService } from 'src/database/database.service';
+import { SpreadsheetService } from 'src/spreadsheet/spreadsheet.service';
 
 
 @Injectable()
 export class DiscordBotService implements OnModuleInit {
-    private config;
+    private config: { token: any; application_id: any; client_id?: string; secret?: string; };
 
-    private client;
-    private rest;
-    private oauth2;
+    private client: Client<boolean>;
+    private rest: REST;
+    private oauth2: OAuth2API;
 
     private readonly commands = [];
 
     constructor(
-        _: ConfigService,
+        private _: ConfigService,
 
-        discord: DiscordService,
-        osu: OsuService,
+        private discord: DiscordService,
+        private osu: OsuService,
+        private database: DatabaseService,
+        private spreadsheet: SpreadsheetService,
     ) {
         this.config = _.get<typeof local_config.discord >('discord');
 
@@ -52,6 +54,8 @@ export class DiscordBotService implements OnModuleInit {
                 OsuService: osu,
                 DiscordService: discord,
                 ConfigService: _,
+                DatabaseService: database,
+                SpreadsheetService: spreadsheet,
             });
             this.commands.push(commandInstance.getCommand());
 
