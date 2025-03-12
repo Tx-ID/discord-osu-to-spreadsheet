@@ -12,9 +12,9 @@ import Configuration from './config';
     imports: [
         ConfigModule.forRoot({isGlobal: true, load: [Configuration],}),
         OsuProviderModule,
+        OsuModule,
         DiscordBotModule,
         DiscordModule,
-        OsuModule,
     ],
     controllers: [],
     providers: [],
