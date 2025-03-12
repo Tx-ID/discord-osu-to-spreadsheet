@@ -18,7 +18,7 @@ import { SpreadsheetService } from 'src/spreadsheet/spreadsheet.service';
 
 @Injectable()
 export class DiscordBotService implements OnModuleInit {
-    private config: { token: any; application_id: any; client_id?: string; secret?: string; };
+    private config: typeof local_config.discord;
 
     private client: Client<boolean>;
     private rest: REST;

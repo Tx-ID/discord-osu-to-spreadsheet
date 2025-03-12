@@ -9,7 +9,7 @@ import GoogleSpreadsheet from "src/utilities/spreadsheet.utility";
 
 @Injectable()
 export class SpreadsheetService {
-    private config: { email: string; id: string; key: string; };
+    private config: typeof local_config.sheets;
     private sheets: Map<string, GoogleSpreadsheet>;
 
     constructor(
@@ -27,6 +27,7 @@ export class SpreadsheetService {
             clientEmail: this.config.email,
             privateKey: this.config.key,
             spreadsheetId: spreadsheet_id,
+            keyId: this.config.key_id,
         });
 
         const valid = await new_sheet.getSheetMetadata();

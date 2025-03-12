@@ -26,7 +26,9 @@ export class CreateCommand {
             if (!button_interaction.isButton()) return;
 
             const button_id = button_interaction.customId;
-            await button_interaction.deferReply({flags: [MessageFlags.Ephemeral]});
+            await button_interaction.deferReply({
+                flags: [MessageFlags.Ephemeral],
+            });
 
             if (button_id === "register") {
                 const sheet =
@@ -36,6 +38,13 @@ export class CreateCommand {
                         "Invalid or missing permission to read Sheets."
                     );
                 }
+                const has_sheet = await sheet.createSheetOrTab(sheet_name);
+
+                if (!has_sheet)
+                    return await button_interaction.editReply(
+                        "Failed to interact with Sheet."
+                    );
+
                 await button_interaction.editReply("Success!");
             } else if (button_id === "unregister") {
             }
