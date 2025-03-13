@@ -35,6 +35,7 @@ export class CreateCommand {
                 interaction.user.id
             );
             if (!user) return await interaction.editReply("?");
+            if (user.is_restricted) return await interaction.editReply("You can't join this tournament.");
 
             const get_user_id =
                 await this.modules.SpreadsheetService.checkDiscordIdExistInRegistration(
