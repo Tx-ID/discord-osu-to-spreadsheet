@@ -4,8 +4,11 @@ import {
     Client,
     ComponentType,
     Interaction,
+    InteractionContextType,
     Message,
     MessageFlags,
+    PermissionFlagsBits,
+    SlashCommandBuilder,
 } from "discord.js";
 import { CommandModules } from "../modules.type";
 
@@ -35,7 +38,10 @@ export class CreateCommand {
                 interaction.user.id
             );
             if (!user) return await interaction.editReply("?");
-            if (user.is_restricted) return await interaction.editReply("You can't join this tournament.");
+            if (user.is_restricted)
+                return await interaction.editReply(
+                    "You can't join this tournament."
+                );
 
             const get_user_id =
                 await this.modules.SpreadsheetService.checkDiscordIdExistInRegistration(
@@ -140,7 +146,7 @@ export class CreateCommand {
                         });
 
                         const collector =
-                            await chat.createMessageComponentCollector();
+                            chat.createMessageComponentCollector();
                         collector.on("collect", async (another_interaction) => {
                             if (!another_interaction.isButton()) return;
 
@@ -189,14 +195,6 @@ export class CreateCommand {
                             ],
                         });
                     }
-                    // await this.modules.SpreadsheetService.appendSheetForOsuRegistration(
-                    //     spreadsheet_id,
-                    //     sheet_name,
-                    //     button_interaction.user.id,
-                    //     button_interaction.user.username,
-                    //     "1",
-                    //     "test_username"
-                    // );
                 } catch (err) {
                     console.log(err);
                     return await button_interaction.editReply(
@@ -207,11 +205,12 @@ export class CreateCommand {
                 // await button_interaction.editReply("Success!");
             } else if (button_id === "unregister") {
                 try {
-                    const count = await this.modules.SpreadsheetService.removeRegistrationByDiscordId(
-                        spreadsheet_id,
-                        sheet_name,
-                        button_interaction.user.id
-                    );
+                    const count =
+                        await this.modules.SpreadsheetService.removeRegistrationByDiscordId(
+                            spreadsheet_id,
+                            sheet_name,
+                            button_interaction.user.id
+                        );
                     if (count && count > 0) {
                         await button_interaction.editReply(
                             "Successfully unregistered!"
@@ -371,6 +370,8 @@ export class CreateCommand {
                     ],
                 },
             ],
+            default_member_permissions: `${PermissionFlagsBits.ManageChannels}`,
+            contexts: [InteractionContextType.Guild],
         };
     }
 }
