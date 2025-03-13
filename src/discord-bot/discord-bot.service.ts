@@ -14,6 +14,7 @@ import { DiscordService } from 'src/discord/discord.service';
 import { OsuService } from 'src/osu/osu.service';
 import { DatabaseService } from 'src/database/database.service';
 import { SpreadsheetService } from 'src/spreadsheet/spreadsheet.service';
+import { OsuProviderService } from 'src/osu-provider/osu-provider.service';
 
 
 @Injectable()
@@ -33,6 +34,8 @@ export class DiscordBotService implements OnModuleInit {
         private osu: OsuService,
         private database: DatabaseService,
         private spreadsheet: SpreadsheetService,
+
+        private osu_provider: OsuProviderService,
     ) {
         this.config = _.get<typeof local_config.discord >('discord');
 
@@ -56,6 +59,7 @@ export class DiscordBotService implements OnModuleInit {
                 ConfigService: _,
                 DatabaseService: database,
                 SpreadsheetService: spreadsheet,
+                OsuAuthService: osu_provider,
             });
             this.commands.push(commandInstance.getCommand());
 

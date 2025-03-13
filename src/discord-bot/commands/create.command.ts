@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Injectable } from "@nestjs/common";
-import { Client, ComponentType, Message, MessageFlags } from "discord.js";
+import {
+    Client,
+    ComponentType,
+    Interaction,
+    Message,
+    MessageFlags,
+} from "discord.js";
 import { CommandModules } from "../modules.type";
 
 import { encrypt, decrypt } from "src/utilities/crypto.utility";
@@ -14,6 +20,51 @@ export class CreateCommand {
         private modules: CommandModules
     ) {
         this.register(modules);
+    }
+
+    private async onJoin(
+        interaction: Interaction, // DEFERRED REPLY
+        spreadsheet_id: string,
+        sheet_name: string,
+        old_interaction: Interaction
+    ) {
+        if (!interaction.isButton()) return;
+
+        try {
+            const user = await this.modules.DatabaseService.getOsuByDiscord(
+                interaction.user.id
+            );
+            if (!user) return await interaction.editReply("?");
+
+            const get_user_id =
+                await this.modules.SpreadsheetService.checkDiscordIdExistInRegistration(
+                    spreadsheet_id,
+                    sheet_name,
+                    user.discordId
+                );
+            if (!get_user_id) {
+                await this.modules.SpreadsheetService.appendSheetForOsuRegistration(
+                    spreadsheet_id,
+                    sheet_name,
+                    user.discordId,
+                    interaction.user.username,
+                    user.osuId,
+                    user.osuUsername
+                );
+                await interaction.editReply("Success!");
+            } else {
+                const profile =
+                    await this.modules.OsuService.getUser(get_user_id);
+                await interaction.editReply(
+                    `You already registered as **${profile.username}**. Press the unregister button if you want to unregister yourself.`
+                );
+            }
+        } catch (err) {
+            console.log(err);
+            await interaction.editReply(
+                "Failed during process. It's not your fault!"
+            );
+        }
     }
 
     private async onRegisterMessageCreated(
@@ -31,22 +82,149 @@ export class CreateCommand {
             });
 
             if (button_id === "register") {
-                const sheet =
-                    await this.modules.SpreadsheetService.get(spreadsheet_id);
-                if (!sheet) {
+                try {
+                    const state = this.modules.OsuAuthService.generateState(
+                        button_interaction.guildId,
+                        button_interaction.user.id
+                    );
+
+                    const user =
+                        await this.modules.DatabaseService.getOsuByDiscord(
+                            button_interaction.user.id
+                        );
+                    if (user) {
+                        const profile = await this.modules.OsuService.getUser(
+                            user.osuId
+                        );
+
+                        const chat = await button_interaction.editReply({
+                            content: `You are logged in as [**${profile.username}**](<https://osu.ppy.sh/users/${user.osuId}>) in osu!\n*Note that logout doesn't remove you from the tournament, you still have to press unregister for it to work.*`,
+                            embeds: [],
+                            components: [
+                                {
+                                    type: 1,
+                                    components: [
+                                        {
+                                            custom_id: "join",
+                                            type: 2,
+                                            style: 3,
+                                            label: "Join Tournament",
+                                            emoji: {
+                                                name: "🎟️",
+                                                animated: false,
+                                            },
+                                        },
+                                        // {
+                                        //     type: 2,
+                                        //     style: 5,
+                                        //     label: "Change Account",
+                                        //     disabled: false,
+                                        //     url: this.modules.OsuAuthService.getAuthorizationURL(
+                                        //         state, ['public', 'identify']
+                                        //     ),
+                                        // },
+                                        {
+                                            custom_id: "logout",
+                                            type: 2,
+                                            style: 4,
+                                            label: "Logout",
+                                            emoji: {
+                                                name: "👋",
+                                                animated: false,
+                                            },
+                                        },
+                                    ],
+                                },
+                            ],
+                        });
+
+                        const collector =
+                            await chat.createMessageComponentCollector();
+                        collector.on("collect", async (another_interaction) => {
+                            if (!another_interaction.isButton()) return;
+
+                            await another_interaction.deferReply({
+                                flags: [MessageFlags.Ephemeral],
+                            });
+
+                            const button_id = another_interaction.customId;
+                            if (button_id === "logout") {
+                                await this.modules.DatabaseService.deleteOsuByDiscord(
+                                    another_interaction.user.id
+                                );
+                                await another_interaction.editReply(
+                                    "Successfully logged out from this bot."
+                                );
+                            } else if (button_id === "join") {
+                                await this.onJoin(
+                                    another_interaction,
+                                    spreadsheet_id,
+                                    sheet_name,
+                                    button_interaction
+                                );
+                            }
+                        });
+                        return;
+                    } else {
+                        return await button_interaction.editReply({
+                            content: `You are not logged in.`,
+                            embeds: [],
+                            components: [
+                                {
+                                    type: 1,
+                                    components: [
+                                        {
+                                            type: 2,
+                                            style: 5,
+                                            label: "Login",
+                                            disabled: false,
+                                            url: this.modules.OsuAuthService.getAuthorizationURL(
+                                                state,
+                                                ["public", "identify"]
+                                            ),
+                                        },
+                                    ],
+                                },
+                            ],
+                        });
+                    }
+                    // await this.modules.SpreadsheetService.appendSheetForOsuRegistration(
+                    //     spreadsheet_id,
+                    //     sheet_name,
+                    //     button_interaction.user.id,
+                    //     button_interaction.user.username,
+                    //     "1",
+                    //     "test_username"
+                    // );
+                } catch (err) {
+                    console.log(err);
                     return await button_interaction.editReply(
-                        "Invalid or missing permission to read Sheets."
+                        "Invalid or missing permission on Spreadsheet.\n-# Please add `sheets-editor@tix-eroge-project.iam.gserviceaccount.com` as editor on your Spreadsheet."
                     );
                 }
-                const has_sheet = await sheet.createSheetOrTab(sheet_name);
 
-                if (!has_sheet)
-                    return await button_interaction.editReply(
-                        "Failed to interact with Sheet."
-                    );
-
-                await button_interaction.editReply("Success!");
+                // await button_interaction.editReply("Success!");
             } else if (button_id === "unregister") {
+                try {
+                    const count = await this.modules.SpreadsheetService.removeRegistrationByDiscordId(
+                        spreadsheet_id,
+                        sheet_name,
+                        button_interaction.user.id
+                    );
+                    if (count && count > 0) {
+                        await button_interaction.editReply(
+                            "Successfully unregistered!"
+                        );
+                    } else {
+                        await button_interaction.editReply(
+                            "You weren't even registered in the first place."
+                        );
+                    }
+                } catch {
+                    return await button_interaction.editReply(
+                        "Failed to process, please ask the Server Admins."
+                    );
+                }
             }
         });
     }

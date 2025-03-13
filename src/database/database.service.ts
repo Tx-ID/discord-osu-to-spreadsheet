@@ -1,13 +1,16 @@
 import { Injectable } from "@nestjs/common";
 
 import ChatToSpreadsheet from "./dbs/chatToSpreadsheet.db";
+import OsuDB from "./dbs/osu.db";
 
 @Injectable()
 export class DatabaseService {
     private ChatToSpreadsheet: ChatToSpreadsheet;
+    private OsuDB: OsuDB;
 
     constructor() {
         this.ChatToSpreadsheet = new ChatToSpreadsheet();
+        this.OsuDB = new OsuDB();
     }
 
     //
@@ -38,4 +41,15 @@ export class DatabaseService {
     }
 
     //
+    async getOsuByDiscord(id) {
+        return await this.OsuDB.findById(id);
+    }
+
+    async setOsuByDiscord(discordId, osuId, username: string, restricted: boolean) {
+        return await this.OsuDB.set(discordId, osuId, username, restricted);
+    }
+
+    async deleteOsuByDiscord(id) {
+        return await this.OsuDB.delete(id);
+    }
 }
