@@ -1,3 +1,5 @@
+const base_url = process.env.BASE_URL;
+
 export default () => ({
     sheets: {
         email: process.env.SHEETS_ACCOUNT_EMAIL,
@@ -16,5 +18,5 @@ export default () => ({
         client_secret: process.env.OSU_CLIENT_SECRET,
         callback_url: `/osu-callback`,
     },
-    base_url: process.env.BASE_URL,
+    base_url: base_url.endsWith('/') ? base_url.slice(0, -1) : base_url,
 });
