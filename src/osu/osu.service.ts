@@ -9,6 +9,17 @@ import { Auth, Client } from "osu-web.js";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as osu from "osu-web.js";
 
+//
+function splitArrayIntoChunks<T>(array: T[], chunkSize: number): T[][] {
+    const result: T[][] = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+        const chunk = array.slice(i, i + chunkSize);
+        result.push(chunk);
+    }
+    return result;
+}
+
+//
 @Injectable()
 export class OsuService {
     private base_url: string;
@@ -34,7 +45,10 @@ export class OsuService {
 
     async getAccessToken(code: string) {
         try {
-            const grant = this.auth.authorizationCodeGrant(['public', 'identify']);
+            const grant = this.auth.authorizationCodeGrant([
+                "public",
+                "identify",
+            ]);
             return await grant.requestToken(code);
         } catch {}
     }
@@ -73,8 +87,36 @@ export class OsuService {
         try {
             const client = await this.getGuestClient();
             return await client.users.getUser(userId);
-        } catch(err) {
+        } catch (err) {
             console.log(err);
         }
+    }
+
+    async getMultipleUsers(ids: string[]) {
+        const chunks = splitArrayIntoChunks(ids, 50);
+        const users: (osu.UserCompact & {
+            country: osu.Country;
+            cover: osu.Cover;
+            groups: osu.UserGroup[];
+            statistics_rulesets: osu.StatisticsRulesets;
+        })[] = [];
+
+        try {
+            const client = await this.getGuestClient();
+
+            for (const chunk of chunks) {
+                try {
+                    const data = await client.users.getUsers({
+                        query: {
+                            ids: chunk.map((id) => Number(id)),
+                            include_variant_statistics: true,
+                        },
+                    });
+                    data.forEach((user) => users.push(user));
+                } catch {}
+            }
+        } catch {}
+
+        return users;
     }
 }

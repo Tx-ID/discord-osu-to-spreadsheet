@@ -82,6 +82,7 @@ export class CreateCommand {
         const collector = await message.createMessageComponentCollector();
         collector.on("collect", async (button_interaction) => {
             if (!button_interaction.isButton()) return;
+            if (button_interaction.component.disabled) return;
 
             const button_id = button_interaction.customId;
             await button_interaction.deferReply({
@@ -105,7 +106,7 @@ export class CreateCommand {
                         );
 
                         const chat = await button_interaction.editReply({
-                            content: `You are logged in as [**${profile.username}**](<https://osu.ppy.sh/users/${user.osuId}>) in osu!\n*Note that logout doesn't remove you from the tournament, you still have to press unregister for it to work.*`,
+                            content: `You are logged in as [**${profile.username}**](<https://osu.ppy.sh/users/${user.osuId}>) in osu!`,
                             embeds: [],
                             components: [
                                 {
@@ -160,7 +161,7 @@ export class CreateCommand {
                                     another_interaction.user.id
                                 );
                                 await another_interaction.editReply(
-                                    "Successfully logged out from this bot."
+                                    "Successfully logged out from this bot.\n*Note that logout doesn't remove you from the tournamentif you ever registered.*"
                                 );
                             } else if (button_id === "join") {
                                 await this.onJoin(
@@ -248,6 +249,8 @@ export class CreateCommand {
                 const content =
                     options.getString("content", false) ??
                     "osu! Tournament Interactive Menu";
+                const allowUnregister =
+                    options.getBoolean("allowunregister", false) ?? true;
 
                 await interaction.deferReply({
                     flags: [MessageFlags.Ephemeral],
@@ -276,6 +279,7 @@ export class CreateCommand {
                                         type: 2,
                                         style: 4,
                                         label: "UNREGISTER",
+                                        disabled: !allowUnregister,
                                     },
                                 ],
                             },
@@ -366,6 +370,11 @@ export class CreateCommand {
                             type: 3,
                             name: "content",
                             description: "The text for interactive menu.",
+                        },
+                        {
+                            type: 5,
+                            name: "allowunregister",
+                            description: "Defaults to true",
                         },
                     ],
                 },
