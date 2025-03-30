@@ -25,6 +25,14 @@ export class CreateCommand {
         this.register(modules);
     }
 
+    private normalizeSpaces(str: string): string {
+        return str.replace(/\s+/g, ' ').trim();
+    }
+
+    private sanitizeString(str: string): string {
+        return this.normalizeSpaces(str.normalize("NFC").trim());
+    }
+
     private async onJoin(
         interaction: Interaction, // DEFERRED REPLY
         spreadsheet_id: string,
@@ -56,11 +64,9 @@ export class CreateCommand {
                     return await interaction.editReply(`Failed to check other's sheet for validation. (2)\n**It's not your fault!**`);
 
                 let found = false;
-                console.log(`>> ${user.osuUsername}`);
                 for (const n of rows) {
                     const names = n[0];
-                    const list = names.split(',  ');
-                    console.log(list);
+                    const list = names.split(',  ').map(n => this.sanitizeString(n));
                     if (list.includes(user.osuUsername)){
                         found = true;
                         break;
