@@ -56,9 +56,11 @@ export class CreateCommand {
                     return await interaction.editReply(`Failed to check other's sheet for validation. (2)\n**It's not your fault!**`);
 
                 let found = false;
+                console.log(`>> ${user.osuUsername}`);
                 for (const n of rows) {
                     const names = n[0];
                     const list = names.split(',  ');
+                    console.log(list);
                     if (list.includes(user.osuUsername)){
                         found = true;
                         break;
