@@ -67,7 +67,7 @@ export class CreateCommand {
                 for (const n of rows) {
                     const names = n[0];
                     const list = names.split(',  ').map(n => this.sanitizeString(n));
-                    if (list.includes(user.osuUsername)){
+                    if (list.includes(this.sanitizeString(user.osuUsername))){
                         found = true;
                         break;
                     }
