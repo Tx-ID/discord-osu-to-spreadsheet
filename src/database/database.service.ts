@@ -22,13 +22,15 @@ export class DatabaseService {
         message_id,
         channel_id,
         spreadsheet_id: string,
-        sheet_name?: string
+        sheet_name?: string,
+        other_data?: any,
     ) {
         return await this.ChatToSpreadsheet.setToChat(
             message_id,
             channel_id,
             spreadsheet_id,
-            sheet_name
+            sheet_name,
+            other_data
         );
     }
 

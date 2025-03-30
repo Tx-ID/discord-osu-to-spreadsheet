@@ -12,15 +12,16 @@ export default class ChatToSpreadsheet {
     }
 
     async getFromChat(message_id) {
-        return await this.db.getObjectDefault<{spreadsheet_id: string, sheet_name: string, channel_id, updated_at: Date}>(`/${message_id}`, null);
+        return await this.db.getObjectDefault<{spreadsheet_id: string, sheet_name: string, channel_id, updated_at: Date, other_data?: any}>(`/${message_id}`, null);
     }
 
-    async setToChat(message_id, channel_id, spreadsheet_id: string, sheet_name?: string) {
+    async setToChat(message_id, channel_id, spreadsheet_id: string, sheet_name?: string, other_data?: any) {
         await this.db.push(`/${message_id}`, {
             spreadsheet_id,
             sheet_name,
             channel_id,
             updated_at: new Date(),
+            other_data,
         });
     }
 

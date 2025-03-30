@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from '@nestjs/config';
+import 'dotenv/config';
 
 import { OsuProviderModule } from './osu-provider/osu-provider.module';
 import { DiscordBotModule } from './discord-bot/discord-bot.module';
