@@ -29,11 +29,14 @@ export class CreateCommand {
         interaction: Interaction, // DEFERRED REPLY
         spreadsheet_id: string,
         sheet_name: string,
-        old_interaction: Interaction
+        message: Message<true>
     ) {
         if (!interaction.isButton()) return;
 
         try {
+            const chat_data = await this.modules.DatabaseService.getChatSpreadsheet(message.id);
+            const flags = chat_data?.other_data?.flags ?? {};
+
             const user = await this.modules.DatabaseService.getOsuByDiscord(
                 interaction.user.id
             );
@@ -42,6 +45,30 @@ export class CreateCommand {
                 return await interaction.editReply(
                     "You can't join this tournament."
                 );
+            
+            if (flags['4wc_2025']) {
+                const sheet = await this.modules.SpreadsheetService.get('1_DWIlcFu985vNeNzSspWqjeJHva0X04fSNZA_2B0YPA');
+                if (!sheet)
+                    return await interaction.editReply(`Failed to check other's sheet for validation.\n**It's not your fault!**`);
+
+                const rows: string[][] = await sheet.getSheetData('registrations!L8:L');
+                if (!rows)
+                    return await interaction.editReply(`Failed to check other's sheet for validation. (2)\n**It's not your fault!**`);
+
+                let found = false;
+                for (const n of rows) {
+                    const names = n[0];
+                    const list = names.split(',  ');
+                    if (list.includes(user.osuUsername)){
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                    return await interaction.editReply(
+                        '[Please register elsewhere first by clicking this text.](<https://r.shdewz.me/4wc25-registration>)\n-# Please wait a moment before pressing join button again after registering.'
+                    );
+            }
 
             const get_user_id =
                 await this.modules.SpreadsheetService.checkDiscordIdExistInRegistration(
@@ -83,6 +110,14 @@ export class CreateCommand {
         collector.on("collect", async (button_interaction) => {
             if (!button_interaction.isButton()) return;
             if (button_interaction.component.disabled) return;
+
+            const chat_data = await this.modules.DatabaseService.getChatSpreadsheet(message.id);
+            if (!chat_data) {
+                return await button_interaction.reply({
+                    content: "Registration is no longer valid. It's not your fault!",
+                    flags: [MessageFlags.Ephemeral],
+                });
+            }
 
             const button_id = button_interaction.customId;
             await button_interaction.deferReply({
@@ -168,7 +203,7 @@ export class CreateCommand {
                                     another_interaction,
                                     spreadsheet_id,
                                     sheet_name,
-                                    button_interaction
+                                    message,
                                 );
                             }
                         });
@@ -242,16 +277,31 @@ export class CreateCommand {
                 return;
             }
             if (subCommand === "register") {
-                const spreadsheetId = options.getString("spreadsheetid", true);
+                const spreadsheetId: string = options.getString("spreadsheetid", true);
                 const sheetName =
                     options.getString("sheetname", false) ??
                     "Miu Bot Registrants";
-                const content =
+                const content: string =
                     options.getString("content", false) ??
                     "osu! Tournament Interactive Menu";
-                const allowUnregister =
+                const allowUnregister: boolean =
                     options.getBoolean("allowunregister", false) ?? true;
+                const string_flags: string =
+                    options.getString('flags', false) ?? "";
 
+                // custom flags
+                const flags = {};
+                if (string_flags.toLowerCase().match('4wc_2025')) {
+                    if (!(interaction.guildId === '561377825639235594' || interaction.guildId === '683598850614624260')) { // 4wc Server or Tix Placeholder Server
+                        return await interaction.reply({
+                            content: "Flag is unavailable in this server.",
+                            flags: [MessageFlags.Ephemeral],
+                        });
+                    }
+                    flags['4wc_2025'] = true;
+                }
+
+                // components related
                 await interaction.deferReply({
                     flags: [MessageFlags.Ephemeral],
                 });
@@ -296,7 +346,8 @@ export class CreateCommand {
                         chat.id,
                         chat.channel.id,
                         spreadsheetId,
-                        sheetName
+                        sheetName,
+                        {flags},
                     );
 
                     interaction.editReply({
@@ -375,6 +426,11 @@ export class CreateCommand {
                             type: 5,
                             name: "allowunregister",
                             description: "Defaults to true",
+                        },
+                        {
+                            type: 3,
+                            name: "flags",
+                            description: "Custom flags",
                         },
                     ],
                 },

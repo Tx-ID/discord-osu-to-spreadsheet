@@ -84,7 +84,7 @@ export default class GoogleSpreadsheet {
             return result.data.values;
         } catch (error) {
             // console.error("Error fetching data:", error);
-            throw error;
+            // throw error;
         }
     }
 
