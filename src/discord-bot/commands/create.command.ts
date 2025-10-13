@@ -78,13 +78,20 @@ export class CreateCommand {
                     );
             }
 
-            const get_user_id =
+            const get_osu_id =
                 await this.modules.SpreadsheetService.checkDiscordIdExistInRegistration(
                     spreadsheet_id,
                     sheet_name,
                     user.discordId
                 );
-            if (!get_user_id) {
+            const get_discord_id = 
+                await this.modules.SpreadsheetService.checkOsuIdExistInRegistration(
+                    spreadsheet_id,
+                    sheet_name,
+                    user.osuId
+                );
+
+            if (!get_osu_id && !get_discord_id) {
                 await this.modules.SpreadsheetService.appendSheetForOsuRegistration(
                     spreadsheet_id,
                     sheet_name,
@@ -93,13 +100,22 @@ export class CreateCommand {
                     user.osuId,
                     user.osuUsername
                 );
-                await interaction.editReply("Success!");
+                await interaction.editReply("You are now registered!");
+
             } else {
-                const profile =
-                    await this.modules.OsuService.getUser(get_user_id);
-                await interaction.editReply(
-                    `You already registered as **${profile.username}**. Press the unregister button if you want to unregister yourself.`
-                );
+                if (get_osu_id) {
+                    const profile =
+                        await this.modules.OsuService.getUser(get_osu_id);
+                    await interaction.editReply(
+                        `You already registered as **${profile.username}**. Press the unregister button if you want to unregister yourself.`
+                    );
+
+                } else if (get_discord_id) {
+                    await interaction.editReply(
+                        `Someone already registered using that osu account.`
+                    );
+
+                }
             }
         } catch (err) {
             console.log(err);
@@ -178,7 +194,7 @@ export class CreateCommand {
                                             custom_id: "logout",
                                             type: 2,
                                             style: 4,
-                                            label: "Logout",
+                                            label: "Logout from Bot",
                                             emoji: {
                                                 name: "👋",
                                                 animated: false,
@@ -204,7 +220,7 @@ export class CreateCommand {
                                     another_interaction.user.id
                                 );
                                 await another_interaction.editReply(
-                                    "Successfully logged out from this bot.\n*Note that logout doesn't remove you from the tournamentif you ever registered.*"
+                                    "Successfully logged out from this bot.\n-# Note that logout doesn't remove you from the tournament if you ever registered."
                                 );
                             } else if (button_id === "join") {
                                 await this.onJoin(
