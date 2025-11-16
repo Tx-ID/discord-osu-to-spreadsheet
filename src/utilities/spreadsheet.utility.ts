@@ -73,14 +73,11 @@ export default class GoogleSpreadsheet {
     }
 
     async getSheetData(range: string) {
-        try {
-            const result = await this.sheets.spreadsheets.values.get({
-                spreadsheetId: this.config.spreadsheetId,
-                range,
-            });
-            return result.data.values;
-        } catch (error) {
-        }
+        const result = await this.sheets.spreadsheets.values.get({
+            spreadsheetId: this.config.spreadsheetId,
+            range,
+        });
+        return result.data.values;
     }
 
     async updateSheetData(range: string, values: any[][]) {
