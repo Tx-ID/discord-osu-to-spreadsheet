@@ -1,5 +1,5 @@
 import { google, sheets_v4 } from "googleapis";
-import { JWT } from "google-auth-library";
+import type { JWT } from "google-auth-library";
 
 interface SpreadsheetConfig {
     spreadsheetId: string;
@@ -28,9 +28,7 @@ export default class GoogleSpreadsheet {
             return await this.sheets.spreadsheets.get({
                 spreadsheetId: this.config.spreadsheetId,
             });
-        } catch (err) {
-            // console.log(err);
-        }
+        } catch (err) {}
     }
 
     async createSheetOrTab(name: string, initial_data: any[][]) {
@@ -61,7 +59,7 @@ export default class GoogleSpreadsheet {
 
             await this.updateSheetData(
                 `${name}!A1:${initial_data.length}`,
-                initial_data
+                initial_data,
             )
                 .then(() => {})
                 .catch((err) => {
@@ -69,9 +67,8 @@ export default class GoogleSpreadsheet {
                 });
 
             return true;
-        } catch (err) {
-            // console.log(err);
-        }
+        } catch (err) {}
+
         return false;
     }
 
@@ -83,8 +80,6 @@ export default class GoogleSpreadsheet {
             });
             return result.data.values;
         } catch (error) {
-            // console.error("Error fetching data:", error);
-            // throw error;
         }
     }
 
@@ -128,22 +123,7 @@ export default class GoogleSpreadsheet {
             values.push(n[0].map(() => ""));
 
             await this.updateSheetData(range, values);
-
-            // await this.sheets.spreadsheets.batchUpdate({
-            //     spreadsheetId: this.config.spreadsheetId,
-            //     requestBody: {
-            //         requests: [
-            //             {
-            //                 deleteDimension: {
-            //                     range: {
-            //                     }
-            //                 }
-            //             }
-            //         ]
-            //     }
-            // });
         } catch (error) {
-            // Handle error
             console.error("Error removing row:", error);
             throw error;
         }
