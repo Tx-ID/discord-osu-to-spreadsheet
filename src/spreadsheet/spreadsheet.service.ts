@@ -40,7 +40,7 @@ export class SpreadsheetService {
         sheet_name: string
     ): Promise<GoogleSpreadsheet> {
         const sheet = await this.get(spreadsheet_id);
-        if (!sheet) throw new Error("Failed to read spreadsheet.");
+        if (!sheet) throw new Error("Failed to read spreadsheet.\n-# For moderators, please add this email to the targetted spreadsheet: sheets-editor@tix-eroge-project.iam.gserviceaccount.com");
 
         const has_sheet = await sheet.createSheetOrTab(sheet_name, [
             [
