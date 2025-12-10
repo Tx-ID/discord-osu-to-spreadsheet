@@ -131,4 +131,103 @@ export class SpreadsheetService {
         }
         return n;
     }
+
+    async getAllOsuIds(spreadsheet_id: string, sheet_name: string) {
+        const sheet = await this.getForOsuRegistration(spreadsheet_id, sheet_name);
+        if (!sheet) throw new Error(`Failed to get spreadsheet`);
+
+        const range = (await sheet.getSheetData(`${sheet_name}!A3:E`)) ?? [];
+        return range
+            .map((row) => row[3])
+            .filter((id) => id && !isNaN(Number(id)));
+    }
+
+    private formatUsersForStats(users: any[]) {
+        return users.map((user) => {
+            const stats = user.statistics_rulesets;
+            const getModeStats = (mode: string) => {
+                const s = stats?.[mode];
+                return [
+                    s?.global_rank ?? "",
+                    s?.pp ?? "",
+                    s?.hit_accuracy ?? "",
+                ];
+            };
+
+            return [
+                user.id,
+                user.username,
+                user.country_code,
+                ...getModeStats("osu"),
+                ...getModeStats("taiko"),
+                ...getModeStats("fruits"),
+                ...getModeStats("mania"),
+            ];
+        });
+    }
+
+    async getOsuIdsFromStats(spreadsheet_id: string, sheet_name: string) {
+        const stats_sheet_name = `${sheet_name} (Stats)`;
+        const sheet = await this.get(spreadsheet_id);
+        if (!sheet) return [];
+
+        try {
+            const range =
+                (await sheet.getSheetData(`${stats_sheet_name}!A2:A`)) ?? [];
+            return range
+                .map((row) => row[0])
+                .filter((id) => id && !isNaN(Number(id)));
+        } catch {
+            return [];
+        }
+    }
+
+    async appendOsuStats(
+        spreadsheet_id: string,
+        sheet_name: string,
+        users: any[]
+    ) {
+        const stats_sheet_name = `${sheet_name} (Stats)`;
+        const sheet = await this.get(spreadsheet_id);
+        if (!sheet) throw new Error("Failed to read spreadsheet.");
+
+        const data = this.formatUsersForStats(users);
+        await sheet.appendRow(`${stats_sheet_name}!A1`, data);
+    }
+
+    async updateOsuStats(
+        spreadsheet_id: string,
+        sheet_name: string,
+        users: any[]
+    ) {
+        const stats_sheet_name = `${sheet_name} (Stats)`;
+        const sheet = await this.get(spreadsheet_id);
+        if (!sheet) throw new Error("Failed to read spreadsheet.");
+
+        const headers = [
+            "ID",
+            "Username",
+            "Country",
+            "STD Global Rank",
+            "STD PP",
+            "STD Acc",
+            "Taiko Global Rank",
+            "Taiko PP",
+            "Taiko Acc",
+            "CtB Global Rank",
+            "CtB PP",
+            "CtB Acc",
+            "Mania Global Rank",
+            "Mania PP",
+            "Mania Acc",
+        ];
+
+        const data = this.formatUsersForStats(users);
+
+        await sheet.createSheetOrTab(stats_sheet_name, [headers, ...data]);
+        await sheet.updateSheetData(`${stats_sheet_name}!A1`, [
+            headers,
+            ...data,
+        ]);
+    }
 }

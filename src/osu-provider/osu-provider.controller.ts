@@ -30,7 +30,7 @@ export class OsuProviderController {
         if (!self) throw new InternalServerErrorException("?");
 
         try {
-            await this.database.setOsuByDiscord(state_data.discordUserId, self.id, self.username, self.is_restricted);
+            await this.database.setOsuByDiscord(state_data.discordUserId, String(self.id), self.username, self.is_restricted);
         } catch {
             throw new InternalServerErrorException('??');
         }

@@ -17,6 +17,11 @@ export default () => ({
         client_id: process.env.OSU_CLIENT_ID as any,
         client_secret: process.env.OSU_CLIENT_SECRET,
         callback_url: `/osu-callback`,
+        filtered_badges: process.env.OSU_FILTERED_BADGES?.split(',') ?? [],
+    },
+    mongodb: {
+        uri: process.env.MONGO_URI,
+        ttl: parseInt(process.env.MONGO_DATA_EXPIRE_DAYS ?? '30', 10) * 24 * 60 * 60,
     },
     base_url: base_url.endsWith('/') ? base_url.slice(0, -1) : base_url,
 });
