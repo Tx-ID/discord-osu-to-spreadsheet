@@ -46,14 +46,12 @@ export class SpreadsheetService {
 
         const has_sheet = await sheet.createSheetOrTab(sheet_name, [
             [
-                "Auto generated with Miu Discord Bot by @tix1 (253876413344514048). Do not modify.",
-            ],
-            [
                 "Timestamp",
                 "Discord Id",
                 "Last Discord Username",
                 "Osu Id",
                 "Last Osu Username",
+                "Auto generated with Miu Discord Bot by @tix1 (253876413344514048). Do not modify.",
             ],
         ]);
         if (!has_sheet) throw new Error("Failed to interact with sheet.");
@@ -75,6 +73,7 @@ export class SpreadsheetService {
         await sheet.appendRow(`${sheet_name}!A1`, [
             [new Date().toISOString(), discord_id, discord_username, osu_id, osu_username]
         ]);
+        await sheet.autoResizeColumns(sheet_name);
     }
 
     async checkDiscordIdExistInRegistration(
@@ -85,7 +84,7 @@ export class SpreadsheetService {
         const sheet = await this.getForOsuRegistration(spreadsheet_id, sheet_name);
         if (!sheet) throw new Error(`Failed to get spreadsheet`);
 
-        const range = await sheet.getSheetData(`${sheet_name}!A3:E`) ?? [];
+        const range = await sheet.getSheetData(`${sheet_name}!A2:E`) ?? [];
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         for (const [timestamp, discordid, discordusername, osuid, osu_username] of range.values()) {
             if (String(discordid) === String(discord_id))
@@ -102,7 +101,7 @@ export class SpreadsheetService {
         const sheet = await this.getForOsuRegistration(spreadsheet_id, sheet_name);
         if (!sheet) throw new Error(`Failed to get spreadsheet`);
 
-        const range = await sheet.getSheetData(`${sheet_name}!A3:E`) ?? [];
+        const range = await sheet.getSheetData(`${sheet_name}!A2:E`) ?? [];
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         for (const [timestamp, discordid, discordusername, osuid, osu_username] of range.values()) {
             if (String(osuid) === String(osu_id))
@@ -119,7 +118,7 @@ export class SpreadsheetService {
         const sheet = await this.getForOsuRegistration(spreadsheet_id, sheet_name);
         if (!sheet) throw new Error(`Failed to get spreadsheet`);
 
-        const rangeString = `${sheet_name}!A3:E`;
+        const rangeString = `${sheet_name}!A2:E`;
         const range = await sheet.getSheetData(rangeString) ?? [];
 
         let n = 0;
@@ -138,7 +137,7 @@ export class SpreadsheetService {
         const sheet = await this.getForOsuRegistration(spreadsheet_id, sheet_name);
         if (!sheet) throw new Error(`Failed to get spreadsheet`);
 
-        const range = (await sheet.getSheetData(`${sheet_name}!A3:E`)) ?? [];
+        const range = (await sheet.getSheetData(`${sheet_name}!A2:E`)) ?? [];
         return range
             .map((row) => row[3])
             .filter((id) => id && !isNaN(Number(id)));
@@ -230,6 +229,7 @@ export class SpreadsheetService {
 
         const data = this.formatUsersForStats(users);
         await sheet.appendRow(`${stats_sheet_name}!A1`, data);
+        await sheet.autoResizeColumns(stats_sheet_name);
     }
 
     async updateOsuStats(
@@ -266,6 +266,7 @@ export class SpreadsheetService {
             headers,
             ...data,
         ]);
+        await sheet.autoResizeColumns(stats_sheet_name);
     }
 
     async updateHitomiStats(
@@ -289,5 +290,6 @@ export class SpreadsheetService {
         await sheet.createSheetOrTab(hitomi_sheet_name, []);
         
         await sheet.updateSheetData(`${hitomi_sheet_name}!D2`, [headers, ...data]);
+        await sheet.autoResizeColumns(hitomi_sheet_name);
     }
 }
