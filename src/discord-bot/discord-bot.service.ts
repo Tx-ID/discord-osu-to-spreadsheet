@@ -39,6 +39,8 @@ export class DiscordBotService implements OnModuleInit {
     ) {
         this.config = _.get<typeof local_config.discord >('discord');
 
+        if (!(this.config as any).enabled) return;
+
         this.rest = new REST({ version: '10' }).setToken(this.config.token);
         this.oauth2 = new OAuth2API(this.rest);
 
@@ -71,6 +73,8 @@ export class DiscordBotService implements OnModuleInit {
 
     //
     async onModuleInit() {
+        if (!(this.config as any).enabled) return;
+
         this.client.once(Events.ClientReady, async () => {
             try {
                 await this.rest.put(

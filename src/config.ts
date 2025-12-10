@@ -12,6 +12,7 @@ export default () => ({
         client_id: process.env.DISCORD_CLIENT_ID,
         secret: process.env.DISCORD_SECRET,
         token: process.env.DISCORD_TOKEN,
+        enabled: process.env.DISCORD_BOT_ENABLED !== 'false',
     },
     osu: {
         client_id: process.env.OSU_CLIENT_ID as any,
