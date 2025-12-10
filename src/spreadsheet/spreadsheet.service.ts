@@ -10,10 +10,12 @@ import GoogleSpreadsheet from "src/utilities/spreadsheet.utility";
 @Injectable()
 export class SpreadsheetService {
     private config: typeof local_config.sheets;
+    private osu_config: typeof local_config.osu;
     private sheets: Map<string, GoogleSpreadsheet>;
 
     constructor(_: ConfigService) {
         this.config = _.get<typeof local_config.sheets>("sheets");
+        this.osu_config = _.get<typeof local_config.osu>("osu");
         this.sheets = new Map();
     }
 
@@ -166,6 +168,41 @@ export class SpreadsheetService {
         });
     }
 
+    private formatUsersForHitomi(users: any[], gamemode: string = "osu") {
+        const blacklist = (this.osu_config.filtered_badges || []).map(s => s.toLowerCase());
+        const blacklistRegex = blacklist.length > 0 
+            ? new RegExp(blacklist.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), "i") 
+            : null;
+
+        return users.map((user) => {
+            const stats = user.statistics_rulesets?.[gamemode];
+            
+            const badges = user.badges || [];
+            const badgeCount = badges.filter(b => {
+                const desc = (b.description || "").toLowerCase();
+                if (blacklistRegex) return !blacklistRegex.test(desc);
+                return true;
+            }).length;
+
+            return [
+                user.id ?? "",
+                user.username ?? "",
+                user.country_code ?? "",
+                stats?.global_rank ?? "",
+                stats?.country_rank ?? "",
+                stats?.pp ?? "0",
+                stats?.level?.current ?? "0",
+                stats?.ranked_score ?? "0",
+                stats?.hit_accuracy ?? "0",
+                stats?.play_count ?? "0",
+                stats?.play_time ?? "0",
+                stats?.maximum_combo ?? "0",
+                stats?.replays_watched_by_others ?? "0",
+                badgeCount ?? "0"
+            ];
+        });
+    }
+
     async getOsuIdsFromStats(spreadsheet_id: string, sheet_name: string) {
         const stats_sheet_name = `${sheet_name} (Stats)`;
         const sheet = await this.get(spreadsheet_id);
@@ -229,5 +266,28 @@ export class SpreadsheetService {
             headers,
             ...data,
         ]);
+    }
+
+    async updateHitomiStats(
+        spreadsheet_id: string,
+        sheet_name: string,
+        users: any[],
+        gamemode: string = "osu"
+    ) {
+        const hitomi_sheet_name = `_api`;
+        const sheet = await this.get(spreadsheet_id);
+        if (!sheet) throw new Error("Failed to read spreadsheet.");
+
+        const headers = [
+             "User ID", "Username", "Country Code", "Global Rank", "Country Rank",
+             "PP", "Level", "Ranked Score", "Accuracy", "Playcount", 
+             "Playtime", "Max Combo", "Replays Watched", "Badge Count"
+        ];
+
+        const data = this.formatUsersForHitomi(users, gamemode);
+
+        await sheet.createSheetOrTab(hitomi_sheet_name, []);
+        
+        await sheet.updateSheetData(`${hitomi_sheet_name}!D2`, [headers, ...data]);
     }
 }

@@ -29,7 +29,8 @@ export class RefreshCommand {
         interaction: CommandInteraction | ButtonInteraction,
         spreadsheetId: string,
         sheetName: string,
-        mode: "all" | "new" = "all"
+        mode: "all" | "new" | "hitomi" = "all",
+        gamemode: string = "osu"
     ) {
         try {
             const registeredIds =
@@ -52,7 +53,6 @@ export class RefreshCommand {
                         sheetName
                     );
                 
-                // Convert to Set for faster lookup
                 const existingSet = new Set(existingIds.map(String));
                 idsToFetch = registeredIds.filter(id => !existingSet.has(String(id)));
 
@@ -70,16 +70,23 @@ export class RefreshCommand {
                     sheetName,
                     users
                 );
-            } else {
+            } else if (mode === "new") {
                 await this.modules.SpreadsheetService.appendOsuStats(
                     spreadsheetId,
                     sheetName,
                     users
                 );
+            } else if (mode === "hitomi") {
+                await this.modules.SpreadsheetService.updateHitomiStats(
+                    spreadsheetId,
+                    sheetName,
+                    users,
+                    gamemode
+                );
             }
 
             await interaction.editReply(
-                `Successfully refreshed statistics for ${users.length} users (${mode === 'all' ? 'Force All' : 'New Only'}).`
+                `Successfully refreshed statistics for ${users.length} users (${mode === 'hitomi' ? `Hitomi - ${gamemode}` : (mode === 'all' ? 'Force All' : 'New Only')}).`
             );
         } catch (err) {
             console.error(err);
@@ -91,9 +98,46 @@ export class RefreshCommand {
 
     private async onButtonInteraction(interaction: ButtonInteraction) {
         const customId = interaction.customId;
-        if (customId !== "refresh_all" && customId !== "refresh_new") return;
 
-        const message_id = interaction.message.id;
+        if (customId === "refresh_hitomi") {
+            const message_id = interaction.message.id;
+            await interaction.reply({
+                content: "Select a gamemode for Hitomi refresh:",
+                flags: [MessageFlags.Ephemeral],
+                components: [
+                    {
+                        type: 1,
+                        components: [
+                            { type: 2, style: 1, label: "osu!", custom_id: `refresh_hitomi_mode:osu:${message_id}` },
+                            { type: 2, style: 1, label: "Taiko", custom_id: `refresh_hitomi_mode:taiko:${message_id}` },
+                            { type: 2, style: 1, label: "Catch", custom_id: `refresh_hitomi_mode:fruits:${message_id}` },
+                            { type: 2, style: 1, label: "Mania", custom_id: `refresh_hitomi_mode:mania:${message_id}` },
+                        ]
+                    }
+                ]
+            });
+            return;
+        }
+
+        let message_id: string;
+        let mode: "all" | "new" | "hitomi" = "all";
+        let gamemode: string = "osu";
+
+        if (customId === "refresh_all") {
+            message_id = interaction.message.id;
+            mode = "all";
+        } else if (customId === "refresh_new") {
+            message_id = interaction.message.id;
+            mode = "new";
+        } else if (customId.startsWith("refresh_hitomi_mode:")) {
+            const parts = customId.split(":");
+            gamemode = parts[1];
+            message_id = parts[2];
+            mode = "hitomi";
+        } else {
+            return;
+        }
+
         const chat_data =
             await this.modules.DatabaseService.getChatSpreadsheet(message_id);
 
@@ -114,7 +158,8 @@ export class RefreshCommand {
             interaction, 
             spreadsheet_id, 
             sheet_name, 
-            customId === "refresh_new" ? "new" : "all"
+            mode,
+            gamemode
         );
     }
 
@@ -188,6 +233,16 @@ export class RefreshCommand {
                                             label: "Refresh Only New Ones",
                                             emoji: {
                                                 name: "🆕",
+                                                animated: false,
+                                            },
+                                        },
+                                        {
+                                            custom_id: "refresh_hitomi",
+                                            type: 2,
+                                            style: 3, // Success/Green
+                                            label: "Refresh to Hitomi",
+                                            emoji: {
+                                                name: "✅",
                                                 animated: false,
                                             },
                                         },

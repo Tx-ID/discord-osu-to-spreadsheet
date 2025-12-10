@@ -11,7 +11,6 @@ export class DatabaseService {
         @InjectModel(ChatToSpreadsheet.name) private chatToSpreadsheetModel: Model<ChatToSpreadsheetDocument>,
     ) {}
 
-    //
     async getChatSpreadsheet(message_id: string) {
         return await this.chatToSpreadsheetModel.findOne({ message_id }).exec();
     }
@@ -38,7 +37,6 @@ export class DatabaseService {
         return await this.chatToSpreadsheetModel.deleteOne({ message_id }).exec();
     }
 
-    //
     async getOsuByDiscord(id: string) {
         return await this.osuModel.findOne({ discordId: id }).exec();
     }

@@ -9,7 +9,6 @@ import { Auth, Client } from "osu-web.js";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as osu from "osu-web.js";
 
-//
 function splitArrayIntoChunks<T>(array: T[], chunkSize: number): T[][] {
     const result: T[][] = [];
     for (let i = 0; i < array.length; i += chunkSize) {
@@ -19,7 +18,6 @@ function splitArrayIntoChunks<T>(array: T[], chunkSize: number): T[][] {
     return result;
 }
 
-//
 @Injectable()
 export class OsuService {
     private base_url: string;
