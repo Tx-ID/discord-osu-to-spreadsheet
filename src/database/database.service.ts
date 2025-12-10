@@ -41,10 +41,11 @@ export class DatabaseService {
         return await this.osuModel.findOne({ discordId: id }).exec();
     }
 
-    async setOsuByDiscord(discordId: string, osuId: string, username: string, restricted: boolean) {
+    async setOsuByDiscord(discordId: string, osuId: string, username: string, restricted: boolean, expiresInSeconds: number) {
+        const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
         return await this.osuModel.findOneAndUpdate(
             { discordId },
-            { osuId, osuUsername: username, is_restricted: restricted },
+            { osuId, osuUsername: username, is_restricted: restricted, expiresAt },
             { upsert: true, new: true },
         ).exec();
     }

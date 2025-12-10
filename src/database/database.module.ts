@@ -16,13 +16,11 @@ import { ChatToSpreadsheet, ChatToSpreadsheetSchema } from './schemas/chat-to-sp
     MongooseModule.forFeatureAsync([
       {
         name: Osu.name,
-        useFactory: (config: ConfigService) => {
+        useFactory: () => {
           const schema = OsuSchema;
-          const ttl = config.get<number>('mongodb.ttl');
-          schema.index({ createdAt: 1 }, { expireAfterSeconds: ttl });
+          schema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
           return schema;
         },
-        inject: [ConfigService],
       },
       {
         name: ChatToSpreadsheet.name,

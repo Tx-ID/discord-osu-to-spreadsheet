@@ -16,6 +16,9 @@ export class Osu {
 
   @Prop()
   is_restricted: boolean;
+
+  @Prop()
+  expiresAt?: Date;
 }
 
 export const OsuSchema = SchemaFactory.createForClass(Osu);
