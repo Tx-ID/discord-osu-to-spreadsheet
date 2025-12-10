@@ -10,6 +10,7 @@ import { DatabaseModule } from './database/database.module';
 import { SpreadsheetModule } from './spreadsheet/spreadsheet.module';
 
 import Configuration from './config';
+import { AppController } from './app.controller';
 
 @Module({
     imports: [
@@ -21,7 +22,7 @@ import Configuration from './config';
         DatabaseModule,
         SpreadsheetModule,
     ],
-    controllers: [],
+    controllers: [AppController],
     providers: [],
 })
 export class AppModule {};
