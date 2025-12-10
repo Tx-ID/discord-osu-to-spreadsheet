@@ -38,17 +38,17 @@ export const renderSuccessHtml = (username: string) => `
 </body>
 </html>`;
 
-export const renderTextHtml = (text: string) => `
+export const renderTextHtml = (title: string = "Page", text: string) => `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Page</title>
+    <title>${title}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 
     <style>
         body {
@@ -57,11 +57,6 @@ export const renderTextHtml = (text: string) => `
             /* White Text */
             color: #ffffff;
             
-            /* Typography: Prioritizes Segoe UI, falls back to Google's Roboto */
-            font-family: "Segoe UI", "Roboto", sans-serif;
-            font-weight: 400; /* Normal weight */
-            font-size: 24px;
-            
             /* Centering Setup */
             height: 100vh;
             margin: 0;
@@ -69,10 +64,16 @@ export const renderTextHtml = (text: string) => `
             justify-content: center;
             align-items: center;
         }
+
+        .roboto-condensed {
+            font-family: "Roboto Condensed", sans-serif;
+            font-optical-sizing: auto;
+            font-style: normal;
+        }
     </style>
 </head>
 <body>
-    <div>${text}</div>
+    <p class="roboto-condensed" style="font-size: 24px; font-weight: 500;">${text}</p>
 </body>
 </html>`;
 

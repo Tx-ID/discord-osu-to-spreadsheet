@@ -2,11 +2,9 @@ import { Injectable } from "@nestjs/common";
 
 import { ConfigService } from "@nestjs/config";
 import Configuration from "src/config";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const local_config = Configuration();
 
 import { buildUrl } from "osu-web.js";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as osu from "osu-web.js";
 
 import { encrypt, decrypt } from '../utilities/crypto.utility';

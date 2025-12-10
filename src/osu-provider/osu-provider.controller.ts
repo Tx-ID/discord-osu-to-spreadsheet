@@ -1,6 +1,11 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { BadRequestException, Controller, Get, InternalServerErrorException, Param, Query } from "@nestjs/common";
 
+import { ConfigService } from "@nestjs/config";
+import Configuration from "src/config";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const local_config = Configuration();
+
 import { OsuService } from "src/osu/osu.service";
 import { OsuProviderService } from "./osu-provider.service";
 import { DatabaseService } from "src/database/database.service";
@@ -13,6 +18,7 @@ export class OsuProviderController {
         private provider: OsuProviderService,
 
         private database: DatabaseService,
+        private _: ConfigService
     ) {}
 
     @Get("/osu-callback")
@@ -40,13 +46,13 @@ export class OsuProviderController {
                 expires_in_seconds
             );
 
-            return renderTextHtml(`Logged in as ${self.username}. You can now close this window and return to Discord.`);
+            return renderTextHtml(this._.get<typeof local_config.html.title>('html.title'), `Logged in as ${self.username}. You can now close this window and return to Discord.`);
         } catch (e) {
             let error_text = "";
             if (e instanceof Error) {
                 error_text = ` [${e.message}]`;
             }
-            return renderTextHtml(`An unknown error occurred ${error_text}`);
+            return renderTextHtml(this._.get<typeof local_config.html.title>('html.title'), `An unknown error occurred ${error_text}`);
         }
     }
 }

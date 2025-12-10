@@ -24,5 +24,9 @@ export default () => ({
         uri: process.env.MONGO_URI,
         ttl: parseInt(process.env.MONGO_DATA_EXPIRE_DAYS ?? '30', 10) * 24 * 60 * 60,
     },
+    html: {
+        title: process.env.HTML_TITLE ?? "Miu",
+        description: process.env.HTML_DESCRIPTION ?? "Made by @tix1",
+    },
     base_url: base_url.endsWith('/') ? base_url.slice(0, -1) : base_url,
 });
