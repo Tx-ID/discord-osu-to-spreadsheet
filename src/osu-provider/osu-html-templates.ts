@@ -38,6 +38,44 @@ export const renderSuccessHtml = (username: string) => `
 </body>
 </html>`;
 
+export const renderTextHtml = (text: string) => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Page</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            /* Black Background */
+            background-color: #000000;
+            /* White Text */
+            color: #ffffff;
+            
+            /* Typography: Prioritizes Segoe UI, falls back to Google's Roboto */
+            font-family: "Segoe UI", "Roboto", sans-serif;
+            font-weight: 400; /* Normal weight */
+            font-size: 24px;
+            
+            /* Centering Setup */
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div>${text}</div>
+</body>
+</html>`;
+
 export const renderErrorHtml = (message: string) => `
 <!DOCTYPE html>
 <html lang="en">
