@@ -139,4 +139,37 @@ export default class GoogleSpreadsheet {
             });
         } catch {}
     }
+
+    async getSheetId(sheetName: string): Promise<number | undefined> {
+        const metadata = await this.getSheetMetadata();
+        const sheet = metadata?.data.sheets?.find(
+            (s) => s.properties?.title === sheetName
+        );
+        return sheet?.properties?.sheetId ?? undefined;
+    }
+
+    async autoResizeColumns(sheetName: string) {
+        const sheetId = await this.getSheetId(sheetName);
+        if (sheetId === undefined) return;
+
+        try {
+            await this.sheets.spreadsheets.batchUpdate({
+                spreadsheetId: this.config.spreadsheetId,
+                requestBody: {
+                    requests: [
+                        {
+                            autoResizeDimensions: {
+                                dimensions: {
+                                    sheetId: sheetId,
+                                    dimension: "COLUMNS",
+                                },
+                            },
+                        },
+                    ],
+                },
+            });
+        } catch (err) {
+            console.error("Error auto-resizing columns:", err);
+        }
+    }
 }

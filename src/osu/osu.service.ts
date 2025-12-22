@@ -9,7 +9,6 @@ import { Auth, Client } from "osu-web.js";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as osu from "osu-web.js";
 
-//
 function splitArrayIntoChunks<T>(array: T[], chunkSize: number): T[][] {
     const result: T[][] = [];
     for (let i = 0; i < array.length; i += chunkSize) {
@@ -19,7 +18,6 @@ function splitArrayIntoChunks<T>(array: T[], chunkSize: number): T[][] {
     return result;
 }
 
-//
 @Injectable()
 export class OsuService {
     private base_url: string;
@@ -43,35 +41,52 @@ export class OsuService {
         );
     }
 
+    private async executeWithRetry<T>(
+        operation: () => Promise<T>,
+        retries: number = 3,
+        baseDelay: number = 1000
+    ): Promise<T> {
+        let lastError: any;
+        for (let attempt = 0; attempt < retries; attempt++) {
+            try {
+                return await operation();
+            } catch (error) {
+                lastError = error;
+                if (attempt < retries - 1) {
+                    const delay = baseDelay * Math.pow(2, attempt);
+                    await new Promise((resolve) => setTimeout(resolve, delay));
+                }
+            }
+        }
+        throw lastError;
+    }
+
     async getAccessToken(code: string) {
         try {
             const grant = this.auth.authorizationCodeGrant([
                 "public",
                 "identify",
             ]);
-            return await grant.requestToken(code);
+            return await this.executeWithRetry(() => grant.requestToken(code));
         } catch {}
     }
 
+    private tokenExpiresAt: number = 0;
+
     async getGuestClient() {
-        let refresh = false;
-
-        const currentClient = this.guestClient;
-        if (!currentClient) refresh = true;
-        else {
-            try {
-                await currentClient.users.getUser(11421465);
-            } catch {
-                refresh = true;
-            }
+        if (this.guestClient && Date.now() < this.tokenExpiresAt) {
+            return this.guestClient;
         }
 
-        if (refresh) {
-            const new_token = await this.auth.clientCredentialsGrant([
-                "public",
-            ]);
-            this.guestClient = new Client(new_token.access_token);
-        }
+        const new_token = await this.executeWithRetry(() => this.auth.clientCredentialsGrant([
+            "public",
+        ]));
+        this.guestClient = new Client(new_token.access_token);
+        
+        // Use expires_in from token if available, otherwise default to 1 hour. 
+        // Subtract 60s buffer.
+        const expiresIn = (new_token as any).expires_in ?? 3600;
+        this.tokenExpiresAt = Date.now() + (expiresIn * 1000) - 60000;
 
         return this.guestClient;
     }
@@ -79,14 +94,14 @@ export class OsuService {
     async getSelf(access_token: string) {
         try {
             const client = new Client(access_token);
-            return await client.users.getSelf();
+            return await this.executeWithRetry(() => client.users.getSelf());
         } catch {}
     }
 
     async getUser(userId) {
         try {
             const client = await this.getGuestClient();
-            return await client.users.getUser(userId);
+            return await this.executeWithRetry(() => client.users.getUser(userId));
         } catch (err) {
             console.log(err);
         }
@@ -99,6 +114,7 @@ export class OsuService {
             cover: osu.Cover;
             groups: osu.UserGroup[];
             statistics_rulesets: osu.StatisticsRulesets;
+            badges?: osu.UserBadge[];
         })[] = [];
 
         try {
@@ -106,13 +122,23 @@ export class OsuService {
 
             for (const chunk of chunks) {
                 try {
-                    const data = await client.users.getUsers({
+                    const data = await this.executeWithRetry(() => client.users.getUsers({
                         query: {
                             ids: chunk.map((id) => Number(id)),
                             include_variant_statistics: true,
                         },
-                    });
-                    data.forEach((user) => users.push(user));
+                    }));
+
+                    for (const user of data) {
+                        if (!user.badges) {
+                            try {
+                                await new Promise((resolve) => setTimeout(resolve, 50));
+                                const fullUser = await this.executeWithRetry(() => client.users.getUser(user.id));
+                                (user as any).badges = fullUser.badges;
+                            } catch {}
+                        }
+                        users.push(user);
+                    }
                 } catch {}
             }
         } catch {}

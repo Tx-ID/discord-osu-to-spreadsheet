@@ -1,57 +1,56 @@
-import { Injectable } from "@nestjs/common";
-
-import ChatToSpreadsheet from "./dbs/chatToSpreadsheet.db";
-import OsuDB from "./dbs/osu.db";
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Osu, OsuDocument } from './schemas/osu.schema';
+import { ChatToSpreadsheet, ChatToSpreadsheetDocument } from './schemas/chat-to-spreadsheet.schema';
 
 @Injectable()
 export class DatabaseService {
-    private ChatToSpreadsheet: ChatToSpreadsheet;
-    private OsuDB: OsuDB;
+    constructor(
+        @InjectModel(Osu.name) private osuModel: Model<OsuDocument>,
+        @InjectModel(ChatToSpreadsheet.name) private chatToSpreadsheetModel: Model<ChatToSpreadsheetDocument>,
+    ) {}
 
-    constructor() {
-        this.ChatToSpreadsheet = new ChatToSpreadsheet();
-        this.OsuDB = new OsuDB();
-    }
-
-    //
-    async getChatSpreadsheet(message_id) {
-        return await this.ChatToSpreadsheet.getFromChat(message_id);
+    async getChatSpreadsheet(message_id: string) {
+        return await this.chatToSpreadsheetModel.findOne({ message_id }).exec();
     }
 
     async setChatSpreadsheet(
-        message_id,
-        channel_id,
+        message_id: string,
+        channel_id: string,
         spreadsheet_id: string,
         sheet_name?: string,
         other_data?: any,
     ) {
-        return await this.ChatToSpreadsheet.setToChat(
-            message_id,
-            channel_id,
-            spreadsheet_id,
-            sheet_name,
-            other_data
-        );
+        return await this.chatToSpreadsheetModel.findOneAndUpdate(
+            { message_id },
+            { channel_id, spreadsheet_id, sheet_name, other_data },
+            { upsert: true, new: true },
+        ).exec();
     }
 
     async getAllChatSpreadsheet() {
-        return await this.ChatToSpreadsheet.getAllChats();
+        return await this.chatToSpreadsheetModel.find({}, 'message_id channel_id').exec();
     }
 
-    async deleteChatSpreadsheet(message_id) {
-        return await this.ChatToSpreadsheet.deleteChat(message_id)
+    async deleteChatSpreadsheet(message_id: string) {
+        return await this.chatToSpreadsheetModel.deleteOne({ message_id }).exec();
     }
 
-    //
-    async getOsuByDiscord(id) {
-        return await this.OsuDB.findById(id);
+    async getOsuByDiscord(id: string) {
+        return await this.osuModel.findOne({ discordId: id }).exec();
     }
 
-    async setOsuByDiscord(discordId, osuId, username: string, restricted: boolean) {
-        return await this.OsuDB.set(discordId, osuId, username, restricted);
+    async setOsuByDiscord(discordId: string, osuId: string, username: string, restricted: boolean, expiresInSeconds: number) {
+        const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
+        return await this.osuModel.findOneAndUpdate(
+            { discordId },
+            { osuId, osuUsername: username, is_restricted: restricted, expiresAt },
+            { upsert: true, new: true },
+        ).exec();
     }
 
-    async deleteOsuByDiscord(id) {
-        return await this.OsuDB.delete(id);
+    async deleteOsuByDiscord(id: string) {
+        return await this.osuModel.deleteOne({ discordId: id }).exec();
     }
 }
