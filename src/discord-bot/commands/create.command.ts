@@ -63,10 +63,14 @@ export class CreateCommand {
                     return await interaction.editReply(`Failed to check other's sheet for validation. (2)\n**It's not your fault!**`);
 
                 let found = false;
+                const targetUser = this.sanitizeString(user.osuUsername);
+                let i = 0;
                 for (const n of rows) {
+                    if (++i % 50 === 0) await new Promise(resolve => setTimeout(resolve, 0));
+
                     const names = n[0];
                     const list = names.split(',  ').map(n => this.sanitizeString(n));
-                    if (list.includes(this.sanitizeString(user.osuUsername))){
+                    if (list.includes(targetUser)){
                         found = true;
                         break;
                     }
@@ -375,6 +379,8 @@ export class CreateCommand {
                     partial_data.message_id
                 );
             }
+            
+            await new Promise((resolve) => setTimeout(resolve, 2000));
         }
     }
 
